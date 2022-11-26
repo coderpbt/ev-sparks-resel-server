@@ -19,7 +19,7 @@ async function run() {
   try {
     const evSparksProductsCollection = client.db("evSparksDB").collection("categoris");
     const evSparksProductsWiseCollection = client.db("evSparksDB").collection("productswise");
-    const evSparksBookingCollection = client.db("evSparksDB").collection("booking");
+    const evSparksBookingCollection = client.db("evSparksDB").collection("bookings");
     const evSparksUserCollection = client.db("evSparksDB").collection("users");
     
     //server to ui data
@@ -51,18 +51,26 @@ async function run() {
     })
 
     //product booking ui to db
-    app.post('/booking', async(req, res) => {
+    app.post('/bookings', async(req, res) => {
       const booking = req.body;
       const result = await evSparksBookingCollection.insertOne(booking)
       res.send(result)
     })
 
-    //email deya single user ar data bair kora
-    app.get('/bookings', async(req,res) => {
+      //email deya single user ar data bair kora
+      app.get('/bookings', async(req,res) => {
       const email = req.query.email;
       const query = {email : email}
       const booking = await evSparksBookingCollection.find(query).toArray();
       res.send(booking)
+    })
+
+    //db to ui show
+    app.get('/bookings', async (req, res) => {
+      const query = {}
+      const cursor = evSparksBookingCollection.find(query);
+      const result = await cursor.toArray()
+      res.send(result)
     })
 
     // user registion save db
@@ -71,6 +79,44 @@ async function run() {
       const result = await evSparksUserCollection.insertOne(user)
       res.send(result)
     })
+
+    //user ar information ui a show
+    // app.get('/users', async(req,res) => {
+    //   const accopt = req.query.accopt;
+    //   const query = { accopt : accopt}
+    //   const users = await evSparksUserCollection.find(query).toArray()
+    //   res.send(users)
+    // })
+
+    app.get('/users', async (req, res) => {
+      const query = {}
+      const cursor = evSparksUserCollection.find(query);
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
+        //admin ki na check
+        app.get('/users/admin/:email', async (req, res) => {
+          const email = req.params.email;
+          const query = { email }
+          const user = await evSparksUserCollection.findOne(query);
+          res.send({ isAdmin: user?.role === 'admin' });
+      })
+    
+        //update role
+        app.put('/users/admin/:id', async(req,res) =>{
+          
+          const id = req.params.id;
+          const filter = { _id : ObjectId(id)}
+          const options = { upsert : true}
+          const updateDoc = {
+            $set : {
+              role : 'admin'
+            }
+          }
+          const result = await evSparksUserCollection.updateOne(filter, updateDoc, options)
+          res.send(result)
+        })
 
 
   } finally {
