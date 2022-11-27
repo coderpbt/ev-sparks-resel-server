@@ -21,6 +21,7 @@ async function run() {
     const evSparksProductsWiseCollection = client.db("evSparksDB").collection("productswise");
     const evSparksBookingCollection = client.db("evSparksDB").collection("bookings");
     const evSparksUserCollection = client.db("evSparksDB").collection("users");
+    const productsCollection = client.db("evSparksDB").collection("products");
     
     //server to ui data
     app.get('/categoris', async (req, res) => {
@@ -36,6 +37,27 @@ async function run() {
       const booking = await evSparksProductsWiseCollection.find(query).toArray()
       res.send(booking)
     })
+
+
+
+
+    //add product a specialty 
+    app.get('/productSpecialty', async(req,res) => {
+      const query = {}
+      const limit = 3;
+      const result = await evSparksProductsCollection.find(query).project({category_id : 1 , name : 1},
+        ).limit(limit).toArray()
+      res.send(result)
+    })
+
+    //email deya single user ar data bair kora
+    app.get('/productswise', async(req,res) => {
+      const email = req.query.email;
+      const query = {email : email}
+      const booking = await evSparksProductsWiseCollection.find(query).toArray();
+      res.send(booking)
+    })
+
     //server to ui data
     app.get('/productswise', async (req, res) => {
       const query = {}
@@ -49,6 +71,15 @@ async function run() {
       const booking = await evSparksProductsWiseCollection.find(query).toArray()
       res.send(booking)
     })
+    app.post('/productswise', async(req,res) => {
+      const doctor = req.body;
+      const result = await evSparksProductsWiseCollection.insertOne(doctor)
+      res.send(result)
+    })
+
+
+
+
 
     //product booking ui to db
     app.post('/bookings', async(req, res) => {
@@ -57,7 +88,7 @@ async function run() {
       res.send(result)
     })
 
-      //email deya single user ar data bair kora
+    //email deya single user ar data bair kora
       app.get('/bookings', async(req,res) => {
       const email = req.query.email;
       const query = {email : email}
@@ -95,7 +126,10 @@ async function run() {
       res.send(result)
     })
 
-        //admin ki na check
+
+
+
+      //admin ki na check
         app.get('/users/admin/:email', async (req, res) => {
           const email = req.params.email;
           const query = { email }
@@ -103,20 +137,22 @@ async function run() {
           res.send({ isAdmin: user?.role === 'admin' });
       })
     
-        //update role
-        app.put('/users/admin/:id', async(req,res) =>{
-          
-          const id = req.params.id;
-          const filter = { _id : ObjectId(id)}
-          const options = { upsert : true}
-          const updateDoc = {
-            $set : {
-              role : 'admin'
-            }
+      //update role
+      app.put('/users/admin/:id', async(req,res) =>{
+        
+        const id = req.params.id;
+        const filter = { _id : ObjectId(id)}
+        const options = { upsert : true}
+        const updateDoc = {
+          $set : {
+            role : 'admin'
           }
-          const result = await evSparksUserCollection.updateOne(filter, updateDoc, options)
-          res.send(result)
-        })
+        }
+        const result = await evSparksUserCollection.updateOne(filter, updateDoc, options)
+        res.send(result)
+      })
+    
+        
 
 
   } finally {
