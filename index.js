@@ -78,10 +78,10 @@ async function run() {
     })
 
       //delete product
-      app.delete('/doctors/:id', verifyJWT, verifyAdmin, async(req,res) => {
+      app.delete('/productswise/:id', async(req,res) => {
       const id = req.params.id
       const query =  { _id : ObjectId(id)}
-      const doctors = await doctorsCollection.deleteOne(query)
+      const doctors = await evSparksProductsWiseCollection.deleteOne(query)
       res.send(doctors)
     })
 
