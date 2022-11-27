@@ -11,6 +11,27 @@ app.use(cors());
 app.use(express.json());
 
 
+//veryfy jwt 
+
+function verifyJWT(req, res, next){
+  const authHeader = req.headers.authorization;
+  if (!authHeader) {
+    return res.status(402).send({message : 'unauthorization User'})
+  }
+  
+  const token = authHeader.split(' ')[1]
+
+  jwt.verify(token, process.env.ACCESS_TOKEN, function(err, decoded){
+    if (err) {
+      return res.status(403).send({message : 'forbidden Access'})
+    }
+    req.decoded = decoded
+    next()
+  })
+
+}
+
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASSWORD}@cluster0.wwzdrm6.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -22,6 +43,20 @@ async function run() {
     const evSparksBookingCollection = client.db("evSparksDB").collection("bookings");
     const evSparksUserCollection = client.db("evSparksDB").collection("users");
     const productsCollection = client.db("evSparksDB").collection("products");
+
+    //verify admin
+    const verifyAdmin = async ( req, res, next) => {
+      const decodedEmil = req.decoded.email;
+      const query = {email : decodedEmil}
+
+      const user = await usersCollection.findOne(query);
+
+      if (user?.role !== 'admin') {
+        return res.status(403).send({message : 'forbidden Access'})
+      }
+      next()
+
+    }
     
     //server to ui data
     app.get('/categoris', async (req, res) => {
@@ -97,8 +132,15 @@ async function run() {
     })
 
     //email deya single user ar data bair kora
-      app.get('/bookings', async(req,res) => {
+      app.get('/bookings', verifyJWT, async(req,res) => {
       const email = req.query.email;
+
+      const decodedEmil = req.decoded.email
+
+      if (email !== decodedEmil) {
+        return res.status(403).send({message : 'forbidden Access'})
+      }
+
       const query = {email : email}
       const booking = await evSparksBookingCollection.find(query).toArray();
       res.send(booking)
@@ -146,19 +188,33 @@ async function run() {
       })
     
       //update role
-      app.put('/users/admin/:id', async(req,res) =>{
+      app.put('/users/admin/:id', verifyJWT, verifyAdmin, async(req,res) =>{
         
         const id = req.params.id;
         const filter = { _id : ObjectId(id)}
         const options = { upsert : true}
         const updateDoc = {
           $set : {
-            role : 'admin'
+            role : 'admin' || 'buyer' || 'seller',
           }
         }
         const result = await evSparksUserCollection.updateOne(filter, updateDoc, options)
         res.send(result)
       })
+
+
+
+    //jwt token api 
+    app.get('/jwt', async(req, res) => {
+      const email = req.query.email;
+      const query = {email : email}
+      const user = await evSparksUserCollection.findOne(query)
+      if (user) {
+        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn : '1h'})
+        return res.send({accessToken : token })
+      }
+      res.status(403).send({accessToken : ''})
+    })
     
         
 
