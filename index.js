@@ -58,7 +58,7 @@ async function run() {
 
     }
     
-    //server to ui data
+    //server to ui datss
     app.get('/categoris', async (req, res) => {
       const query = {}
       const cursor = evSparksProductsCollection.find(query);
