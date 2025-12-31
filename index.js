@@ -49,7 +49,7 @@ async function run() {
       const decodedEmil = req.decoded.email;
       const query = {email : decodedEmil}
 
-      const user = await usersCollection.findOne(query);
+      const user = await evSparksUserCollection.findOne(query);
 
       if (user?.role !== 'admin') {
         return res.status(403).send({message : 'forbidden Access'})
@@ -94,12 +94,26 @@ async function run() {
     })
 
     //server to ui data
-    app.get('/productswise', async (req, res) => {
+    app.get('/productswise/recent', async (req, res) => {
       const query = {}
-      const cursor = evSparksProductsWiseCollection.find(query);
+      const cursor = evSparksProductsWiseCollection
+      .find(query)
+      .sort({_id : -1})
+      .limit(6)
       const result = await cursor.toArray()
       res.send(result)
     })
+
+    app.get('/productswise/popular', async (req, res) => {
+      const query = {}
+      const cursor = evSparksProductsWiseCollection
+      .find(query)
+      .sort({viewCount : -1})
+      .limit(6)
+      const result = await cursor.toArray()
+      res.send(result)
+    })
+
     app.get('/productswise/:id', async (req, res) => {
       const id = req.params.id;
       const query = { _id : ObjectId(id) }
