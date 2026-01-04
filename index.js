@@ -92,6 +92,12 @@ async function run() {
       const booking = await evSparksProductsWiseCollection.find(query).toArray();
       res.send(booking)
     })
+     app.get('/productswise/all', async (req, res) => {
+      const query = {}
+      const cursor = evSparksProductsWiseCollection.find(query);
+      const result = await cursor.toArray()
+      res.send(result)
+    })
 
     //server to ui data
     app.get('/productswise/recent', async (req, res) => {
