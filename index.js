@@ -140,6 +140,23 @@ async function run() {
       res.send(doctors)
     })
 
+    // product Update
+    app.put('/productswise/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: ObjectId(id) };
+      const updatedProduct = req.body;
+      
+      // Remove email from update to prevent it from being changed
+      delete updatedProduct.email;
+      
+      const updateDoc = {
+        $set: updatedProduct
+      };
+      
+      const result = await evSparksProductsWiseCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
 
 
 
@@ -196,6 +213,12 @@ async function run() {
       res.send(result)
     })
 
+    app.delete('/users/:id', async(req,res) => {
+        const id = req.params.id
+        const query =  { _id : ObjectId(id)}
+        const userRes = await evSparksUserCollection.deleteOne(query)
+        res.send(userRes)
+    })
 
 
 
@@ -230,7 +253,7 @@ async function run() {
       const query = {email : email}
       const user = await evSparksUserCollection.findOne(query)
       if (user) {
-        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn : '1h'})
+        const token = jwt.sign({email}, process.env.ACCESS_TOKEN, {expiresIn : '6h'})
         return res.send({accessToken : token })
       }
       res.status(403).send({accessToken : ''})
